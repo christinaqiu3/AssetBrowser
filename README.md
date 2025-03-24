@@ -12,4 +12,4 @@ Built with:
 - shadcn-ui
 - Tailwind CSS
 
-With help from Lovable for UI elements and structuring
+With help from Lovable for UI elements and code structuring
