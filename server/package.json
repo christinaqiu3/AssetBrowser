@@ -1,0 +1,23 @@
+
+{
+  "name": "asset-manager-server",
+  "version": "1.0.0",
+  "description": "Express server for Asset Manager application",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "seed": "node seed/seed.js"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.1395.0",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "mongoose": "^7.2.2"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.22"
+  }
+}
