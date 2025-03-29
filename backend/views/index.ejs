@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" contnt="IE=edge">
+        <meta name="vieport" content="width=device-width, initial-scale=1.0">
+        <title>Document</title>
+    </head>
+<body>
+    <!-- to print "Hello" and then whatever was passed down though the "text" parameter from server -->
+    Hello <%= text %>
+
+    <!-- to print the value of 2+2 -->
+    <%= 2 + 2 %>
+
+    <!-- "local" is all the info passed through 2nd param of res.render call in server -->
+    <!-- if "text" is undefined, then print default. If it is, then print the value of "text" -->
+    <%= locals.text || "Default" %>
+</body>
+
+</html>
