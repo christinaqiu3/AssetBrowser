@@ -1,9 +1,11 @@
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Lock, LockOpen, Download, PlayCircle } from "lucide-react";
 import { AssetWithDetails } from "@/services/api";
+import CheckInFlow from "./CheckInFlow";
 
 interface AssetControlPanelProps {
   asset: AssetWithDetails;
@@ -24,6 +26,13 @@ const AssetControlPanel = ({
   onDownload,
   onLaunchDCC
 }: AssetControlPanelProps) => {
+  const [checkInOpen, setCheckInOpen] = useState(false);
+
+  const handleCheckInComplete = () => {
+    onCheckin();
+    setCheckInOpen(false);
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -61,7 +70,7 @@ const AssetControlPanel = ({
         
         <Button 
           className="flex items-center gap-2" 
-          onClick={onCheckin}
+          onClick={() => setCheckInOpen(true)}
           disabled={!canCheckin}
         >
           <Lock className="h-4 w-4" />
@@ -86,6 +95,13 @@ const AssetControlPanel = ({
           Launch DCC
         </Button>
       </div>
+
+      <CheckInFlow 
+        asset={asset}
+        open={checkInOpen}
+        onOpenChange={setCheckInOpen}
+        onComplete={handleCheckInComplete}
+      />
     </div>
   );
 };

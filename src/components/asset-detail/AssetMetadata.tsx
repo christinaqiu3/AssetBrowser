@@ -1,16 +1,16 @@
-
 import { User, Calendar, Tag, Info, Lock, GitCommit } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { AssetWithDetails } from "@/services/api";
 
 interface AssetMetadataProps {
   asset: AssetWithDetails;
+  hideTitle?: boolean;
 }
 
-const AssetMetadata = ({ asset }: AssetMetadataProps) => {
+const AssetMetadata = ({ asset, hideTitle = false }: AssetMetadataProps) => {
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-medium">{asset?.name}</h3>
+      {!hideTitle && <h3 className="text-lg font-medium">{asset?.name}</h3>}
       
       <div className="space-y-3">
         <div className="flex items-start gap-2">

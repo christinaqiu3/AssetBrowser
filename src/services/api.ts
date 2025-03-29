@@ -209,7 +209,7 @@ export const api = {
   },
   
   // Check out an asset
-  async checkoutAsset(id: string, userName: string) {
+  async checkoutAsset(id: string, pennId: string) {
     try {
       await simulateApiDelay();
       const assetIndex = mockAssets.findIndex(a => a.id === id);
@@ -223,8 +223,8 @@ export const api = {
         throw new Error(`Asset is already checked out by ${checkedOutByName}`);
       }
       
-      // Find user by name
-      const user = mockUsers.find(u => u.fullName === userName);
+      // Find user by pennId
+      const user = mockUsers.find(u => u.pennId === pennId);
       if (!user) {
         throw new Error("User not found");
       }
@@ -249,7 +249,7 @@ export const api = {
   },
   
   // Check in an asset
-  async checkinAsset(id: string, userName: string) {
+  async checkinAsset(id: string, pennId: string) {
     try {
       await simulateApiDelay();
       const assetIndex = mockAssets.findIndex(a => a.id === id);
@@ -262,8 +262,8 @@ export const api = {
         throw new Error("Asset is not checked out");
       }
       
-      // Find user by name
-      const user = mockUsers.find(u => u.fullName === userName);
+      // Find user by pennId
+      const user = mockUsers.find(u => u.pennId === pennId);
       if (!user) {
         throw new Error("User not found");
       }
