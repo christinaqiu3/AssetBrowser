@@ -1,6 +1,6 @@
 const mongodb = require('mongodb')
 
-const connectionURL = 'mongodb+srv://fernc:spring25cs7000@cis7000-database.fdliv.mongodb.net/ '
+const connectionURL = ''
 const databaseName = 'task-manager'
 const MongoClient = new mongodb.MongoClient(connectionURL, { useNewUrlParser: true })
 
