@@ -1,7 +1,11 @@
-const mongodb = require('mongodb');
+const mongodb = require('mongodb')
+
+const connectionURL = 'mongodb+srv://fernc:spring25cs7000@cis7000-database.fdliv.mongodb.net/ '
+const databaseName = 'task-manager'
+const MongoClient = new mongodb.MongoClient(connectionURL, { useNewUrlParser: true })
 
 function connect() {
- mongodb.connect(process.env.MONGODB_URI, {
+  MongoClient.connect(process.env.MONGODB_URI, {
    useNewUrlParser: true,
    useUnifiedTopology: true,
  })
@@ -16,3 +20,18 @@ function connect() {
 }
 
 module.exports = { connect };
+
+
+const AWS = require('aws-sdk');
+
+const s3 = new AWS.S3();
+
+(async () => {
+await s3
+    .putObject({
+    Body: "hello world",
+    Bucket: "production-pipelines-spring2025",
+    Key: "my_file.txt",
+    })
+  .promise();
+})();
