@@ -1,5 +1,7 @@
 import { toast } from "@/components/ui/use-toast";
 
+process.env.NODE_ENV = 'production';
+
 // Types based on MongoDB schemas
 export interface Asset {
   assetId: number; // Using assetId as the unique identifier as per updated schema
