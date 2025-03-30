@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Separator } from "@/components/ui/separator";
@@ -17,6 +18,20 @@ const AssetDetailPage = () => {
   const { user } = useUser();
   const [asset, setAsset] = useState<AssetWithDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Helper function to get user full name - moved before its usage
+  const getUserFullName = (pennId: string | null): string | null => {
+    if (!pennId) return null;
+    // This should match the mockUsers logic in the API
+    const mockUsers = [
+      { pennId: "js123", fullName: "James Smith" },
+      { pennId: "ej456", fullName: "Emily Johnson" },
+      { pennId: "mb789", fullName: "Michael Brown" },
+      { pennId: "sw012", fullName: "Sarah Wilson" }
+    ];
+    const user = mockUsers.find(u => u.pennId === pennId);
+    return user ? user.fullName : null;
+  };
   
   const fetchAsset = async () => {
     if (!id) return;
@@ -41,7 +56,7 @@ const AssetDetailPage = () => {
     if (!id || !user || !asset) return;
     
     try {
-      const { asset: updatedAsset } = await api.checkoutAsset(id, user.name);
+      const { asset: updatedAsset } = await api.checkoutAsset(id, user.pennId);
       setAsset(updatedAsset);
       toast({
         title: "Asset Checked Out",
@@ -56,7 +71,7 @@ const AssetDetailPage = () => {
     if (!id || !user || !asset) return;
     
     try {
-      const { asset: updatedAsset } = await api.checkinAsset(id, user.name);
+      const { asset: updatedAsset } = await api.checkinAsset(id, user.pennId);
       setAsset(updatedAsset);
       toast({
         title: "Asset Checked In",
@@ -88,7 +103,7 @@ const AssetDetailPage = () => {
   };
   
   const canCheckout = asset && !asset.isCheckedOut && user;
-  const canCheckin = asset && asset.isCheckedOut && asset.checkedOutBy === user?.name;
+  const canCheckin = asset && asset.isCheckedOut && user && asset.checkedOutBy === getUserFullName(user.pennId);
   
   if (isLoading) {
     return <AssetDetailSkeleton />;
@@ -100,7 +115,7 @@ const AssetDetailPage = () => {
   
   return (
     <div className="container mx-auto py-8 px-4 max-w-7xl">
-      <AssetDetailHeader title="Asset Details" />
+      <AssetDetailHeader title={asset.name} />
       
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         <AssetPreview asset={asset} />
@@ -118,7 +133,7 @@ const AssetDetailPage = () => {
           
           <Separator />
           
-          <AssetMetadata asset={asset} />
+          <AssetMetadata asset={asset} hideTitle={true} />
         </div>
       </div>
     </div>
@@ -126,3 +141,4 @@ const AssetDetailPage = () => {
 };
 
 export default AssetDetailPage;
+

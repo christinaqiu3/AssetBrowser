@@ -59,7 +59,7 @@ const AssetGrid = ({ assets, isLoading }: AssetGridProps) => {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-4">
       {assets.map((asset) => (
-        <div key={asset.id} className="animate-slide-in [animation-fill-mode:backwards]" style={{
+        <div key={asset.assetId} className="animate-slide-in [animation-fill-mode:backwards]" style={{
           animationDelay: `${assets.indexOf(asset) * 50}ms`
         }}>
           <AssetCard asset={asset} />

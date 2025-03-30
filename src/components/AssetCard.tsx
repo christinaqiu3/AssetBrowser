@@ -14,7 +14,7 @@ const AssetCard = ({ asset }: AssetCardProps) => {
   const [imageLoaded, setImageLoaded] = useState(false);
 
   return (
-    <Link to={`/assets/${asset.id}`} className="block">
+    <Link to={`/assets/${asset.assetId}`} className="block">
       <Card className={cn(
         "asset-card h-full overflow-hidden",
         asset.isCheckedOut && "checked-out",

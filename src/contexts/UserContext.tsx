@@ -3,22 +3,28 @@ import React, { createContext, useContext, useState } from "react";
 
 type User = {
   name: string;
+  pennId: string;
   role: "admin" | "user";
 };
 
 type UserContextType = {
   user: User | null;
-  login: (name: string) => void;
+  login: (name: string, pennId: string) => void;
   logout: () => void;
 };
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>({ name: "Demo User", role: "user" });
+  // Initialize with a mock user that exists in the API mockUsers array
+  const [user, setUser] = useState<User | null>({ 
+    name: "James Smith", 
+    pennId: "js123", 
+    role: "user" 
+  });
 
-  const login = (name: string) => {
-    setUser({ name, role: "user" });
+  const login = (name: string, pennId: string) => {
+    setUser({ name, pennId, role: "user" });
   };
 
   const logout = () => {
