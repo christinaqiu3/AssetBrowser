@@ -34,6 +34,51 @@ async function addNewCommitFromFile(metadataFilePath) {
       console.error('Error adding new commit:', err);
   }
 }
+
+async function addTestCommit() {
+  try {
+      const commitData = {
+          commitId: 000000000,
+          pennKey: "testUser",
+          versionNum: "00.00.00",
+          notes: "This is a commit for testing.",
+          prevCommitId: null,
+          commitDate: moment().utc().toISOString(),
+          hasMaterials: false,
+          state: ["latest"],
+          files: {
+              "asset000000000.usd": "s3://test-bucket/asset000000000.usd",
+              "thumbnail000000000.png": "s3://test-bucket/thumbnail000000000.png",
+              "asset000000000_lod1.usd": "s3://test-bucket/asset000000000_lod1.usd",
+              "asset000000000_lod2.usd": "s3://test-bucket/asset000000000_lod2.usd"
+          }
+      };
+
+      const newCommit = new Commit({
+          commitId: commitData.commitId,
+          pennKey: commitData.pennKey,
+          versionNum: commitData.versionNum,
+          notes: commitData.notes,
+          prevCommitId: commitData.prevCommitId,
+          commitDate: commitData.commitDate,
+          hasMaterials: commitData.hasMaterials,
+          state: commitData.state
+      });
+      
+      const savedCommit = await newCommit.save();
+      console.log('Test commit successfully added:', savedCommit);
+
+      const newCommitFiles = new CommitFiles({
+          commitId: commitData.commitId,
+          ...commitData.files
+      });
+
+      const savedCommitFiles = await newCommitFiles.save();
+      console.log('Test commit files successfully added:', savedCommitFiles);
+  } catch (err) {
+      console.error('Error adding test commit:', err);
+  }
+}
   
   async function main() {
     try {
@@ -46,8 +91,10 @@ async function addNewCommitFromFile(metadataFilePath) {
     });
       console.log('Connected to MongoDB!');
       
-      const metadataFilePath = 'beegCrab/metadata.json'; // Update with the correct file path
-      await addNewAssetFromFile(metadataFilePath);
+      //const metadataFilePath = 'beegCrab/metadata.json'; // Update with the correct file path
+      //await addNewAssetFromFile(metadataFilePath);
+
+      await addTestCommit();
 
       mongoose.connection.close();
     } catch (err) {
