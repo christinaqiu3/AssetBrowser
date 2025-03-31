@@ -37,10 +37,13 @@ async function addNewCommitFromFile(metadataFilePath) {
   
   async function main() {
     try {
-      await mongoose.connect('mongodb://localhost:27017/cis7000', {
+      // Replace <username> and <password> with your MongoDB Atlas credentials.
+      // Replace <cluster-url> with your cluster's URL (found in MongoDB Atlas under "Connect").
+      // Replace <database> with your database name.
+      await mongoose.connect('mongodb+srv://<username>:<password>@<cluster-url>/<database>?retryWrites=true&w=majority', {
         useNewUrlParser: true,
         useUnifiedTopology: true
-      });
+    });
       console.log('Connected to MongoDB!');
       
       const metadataFilePath = 'beegCrab/metadata.json'; // Update with the correct file path
