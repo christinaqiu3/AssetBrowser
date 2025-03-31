@@ -37,8 +37,11 @@ async function addNewCommitFromFile(metadataFilePath) {
 
 async function addTestCommit() {
   try {
+      // Format commitId with leading zeros (e.g., 0000001, 0000002, etc.)
+      const commitId = commitIdCounter.toString().padStart(7, '0'); 
+
       const commitData = {
-          commitId: 000000000,
+          commitId: commitId,
           pennKey: "testUser",
           versionNum: "00.00.00",
           notes: "This is a commit for testing.",
@@ -47,10 +50,10 @@ async function addTestCommit() {
           hasMaterials: false,
           state: ["latest"],
           files: {
-              "asset000000000.usd": "s3://test-bucket/asset000000000.usd",
-              "thumbnail000000000.png": "s3://test-bucket/thumbnail000000000.png",
-              "asset000000000_lod1.usd": "s3://test-bucket/asset000000000_lod1.usd",
-              "asset000000000_lod2.usd": "s3://test-bucket/asset000000000_lod2.usd"
+              "asset${commitId}.usd": "s3://test-bucket/asset${commitId}.usd",
+              "thumbnail${commitId}.png": "s3://test-bucket/thumbnail${commitId}.png",
+              "asset${commitId}_lod1.usd": "s3://test-bucket/asset${commitId}_lod1.usd",
+              "asset${commitId}_lod2.usd": "s3://test-bucket/asset${commitId}_lod2.usd"
           }
       };
 
@@ -94,6 +97,9 @@ async function addTestCommit() {
       //const metadataFilePath = 'beegCrab/metadata.json'; // Update with the correct file path
       //await addNewAssetFromFile(metadataFilePath);
 
+      // add as many test commits as you want
+      await addTestCommit();
+      await addTestCommit();
       await addTestCommit();
 
       mongoose.connection.close();
