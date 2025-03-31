@@ -1,4 +1,4 @@
-import { S3Client, GetObjectCommand, PutObjectCommand, DeleteObjectCommand, HeadObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, GetObjectCommand, PutObjectCommand, DeleteObjectCommand, HeadObjectCommand, ListBucketsCommand } from '@aws-sdk/client-s3';
 import multer from 'multer';
 import multerS3 from 'multer-s3';
 import path from 'path';
@@ -25,6 +25,29 @@ const s3Client = new S3Client({
 
 const bucketName = process.env.S3_BUCKET_NAME || 'asset-management-files';
 
+// Verify S3 connection on startup
+export const verifyS3Connection = async () => {
+  try {
+    console.log('Verifying S3 connection...');
+    const command = new ListBucketsCommand({});
+    const response = await s3Client.send(command);
+    const bucketExists = response.Buckets?.some(bucket => bucket.Name === bucketName);
+    
+    if (bucketExists) {
+      console.log(`✅ Successfully connected to S3 and bucket "${bucketName}" exists.`);
+    } else {
+      console.warn(`⚠️ Connected to S3, but bucket "${bucketName}" was not found.`);
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('❌ Error connecting to S3:', error);
+    console.error('Please check your AWS credentials and bucket configuration.');
+    // Don't throw - allow application to continue even with S3 issues
+    return false;
+  }
+};
+
 // Set up multer for file uploads with multer-s3 v3 compatibility
 export const upload = multer({
   storage: multerS3({
@@ -50,7 +73,7 @@ export const upload = multer({
     if (allowedExtensions.includes(ext)) {
       cb(null, true);
     } else {
-      cb(new Error('File type not supported'));
+      cb(new Error(`File type ${ext} not supported. Allowed types: ${allowedExtensions.join(', ')}`));
       return;
     }
   }
@@ -67,7 +90,7 @@ export const getFileFromS3 = async (key: string) => {
     const response = await s3Client.send(command);
     return response.Body as Readable;
   } catch (error) {
-    console.error('Error getting file from S3:', error);
+    console.error(`Error getting file ${key} from S3:`, error);
     throw error;
   }
 };
@@ -86,7 +109,7 @@ export const uploadFileToS3 = async (buffer: Buffer, key: string, contentType: s
     // Generate a URL for the uploaded file
     return `https://${bucketName}.s3.amazonaws.com/${key}`;
   } catch (error) {
-    console.error('Error uploading file to S3:', error);
+    console.error(`Error uploading file ${key} to S3:`, error);
     throw error;
   }
 };
@@ -102,7 +125,7 @@ export const deleteFileFromS3 = async (key: string) => {
     await s3Client.send(command);
     return true;
   } catch (error) {
-    console.error('Error deleting file from S3:', error);
+    console.error(`Error deleting file ${key} from S3:`, error);
     throw error;
   }
 };
