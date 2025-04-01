@@ -129,30 +129,35 @@ async function addTestAsset() {
       console.error('Error adding test asset:', err);
   }
 }
+
+module.exports = {
+  getAssetByName, 
+  addNewCommitFromFile
+};
   
-  async function main() {
-    try {
-      // Replace <username> and <password> with your MongoDB Atlas credentials.
-      // Replace <cluster-url> with your cluster's URL (found in MongoDB Atlas under "Connect").
-      // Replace <database> with your database name.
-      await mongoose.connect('mongodb+srv://<username>:<password>@<cluster-url>/<database>?retryWrites=true&w=majority', {
-        useNewUrlParser: true,
-        useUnifiedTopology: true
-    });
-      console.log('Connected to MongoDB!');
-      
-      //const metadataFilePath = 'beegCrab/metadata.json'; // Update with the correct file path
-      //await addNewAssetFromFile(metadataFilePath);
+async function main() {
+  try {
+    // Replace <username> and <password> with your MongoDB Atlas credentials.
+    // Replace <cluster-url> with your cluster's URL (found in MongoDB Atlas under "Connect").
+    // Replace <database> with your database name.
+    await mongoose.connect('mongodb+srv://<username>:<password>@<cluster-url>/<database>?retryWrites=true&w=majority', {
+      useNewUrlParser: true,
+      useUnifiedTopology: true
+  });
+    console.log('Connected to MongoDB!');
+    
+    //const metadataFilePath = 'beegCrab/metadata.json'; // Update with the correct file path
+    //await addNewAssetFromFile(metadataFilePath);
 
-      // add as many test commits as you want
-      await addTestCommit();
-      await addTestCommit();
-      await addTestCommit();
+    // add as many test commits as you want
+    await addTestCommit();
+    await addTestCommit();
+    await addTestCommit();
 
-      mongoose.connection.close();
-    } catch (err) {
-      console.error('Connection error:', err);
-    }
+    mongoose.connection.close();
+  } catch (err) {
+    console.error('Connection error:', err);
   }
-  
-  main();
+}
+
+main();

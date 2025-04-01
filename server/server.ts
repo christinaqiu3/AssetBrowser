@@ -2,7 +2,6 @@ import express from 'express';
 import cors from 'cors';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-const getAssetByName = require('./getAssetByName'); 
 
 // Import routes
 import assetRoutes from './routes/assetRoutes';
@@ -14,8 +13,9 @@ import { verifyS3Connection } from './utils/s3';
 import { checkoutAsset } from './controllers/assetController';
 
 // Import functions
-import checkOutAsset from './models/checkOutAsset';
-// import addAsset from './models/addAsset';
+const {getAssetByName, addNewCommitFromFile} = require('./models/addAsset.cjs');
+const checkOutAsset = require('./models/checkOutAsset.js');
+
 
 // Load environment variables
 dotenv.config();
@@ -78,8 +78,7 @@ app.get('/assets', async (req, res) => {
 // Route: Check Out an Asset (change checkedOut status)
 app.put('/assets/checkout/:name', async (req, res) => {
   try {
-    const name = req.params.name;
-    const asset = await checkOutAsset(name);
+    const asset = await checkOutAsset(req.params.name);
     res.json(asset); // Send the updated asset as a response
   } catch (error) {
     if (error instanceof Error) {
@@ -91,16 +90,23 @@ app.put('/assets/checkout/:name', async (req, res) => {
 });
 
 // Route: Check In an Asset
+app.get('/assets/checkin/:name', async (req, res) => {
+  try {
+    const asset = await addNewCommitFromFile(req.params.name);
+    res.json(asset); // Return full asset details (name, keywords, commit history, etc.)
+  } catch (error) {
+    if (error instanceof Error) {
+      res.status(400).json({ error: error.message });
+    } else {
+      res.status(400).json({ error: "Unknown error" });
+    }
+  }
+});
 
 // Route: Get Asset Details (for when a user clicks to view full asset info)
 app.get('/assets/:name', async (req, res) => {
   try {
     const asset = await getAssetByName(req.params.name);
-
-    if (!asset) {
-      return res.status(404).json({ error: "Asset not found" });
-    }
-
     res.json(asset); // Return full asset details (name, keywords, commit history, etc.)
   } catch (error) {
     if (error instanceof Error) {
