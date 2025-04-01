@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { AssetWithDetails } from "@/services/api";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -54,6 +53,7 @@ const CheckInFlow = ({ asset, open, onOpenChange, onComplete }: CheckInFlowProps
         
         {step === 2 && (
           <CheckInStep2 
+            asset={asset}
             uploadedFiles={uploadedFiles}
             setUploadedFiles={setUploadedFiles}
             verificationComplete={verificationComplete}
