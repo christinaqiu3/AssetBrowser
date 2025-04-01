@@ -301,65 +301,15 @@ export const checkoutAsset = async (req: Request, res: Response) => {
     asset.checkedOutBy = pennId || "willcai"; 
     await asset.save();
     console.log(`[DEBUG] Asset ${assetName} has been checked out by ${pennId || "willcai"}`);
-
-    // download asset
-    // try {
-    //   const assetName = req.params.id;
-    //   console.log(`[DEBUG] Downloading asset ${assetName}`);
-  
-    //   // Find the asset by assetName
-    //   const asset = await Asset.findOne({ assetName });
-  
-    //   if (!asset) {
-    //     console.log(`[DEBUG] Asset ${assetName} not found for download`);
-    //     return res.status(404).json({ message: 'Asset not found' });
-    //   }
-  
-    //   // Get the latest commit for this asset
-    //   const latestCommit = await Commit.findOne({ commitId: asset.latestCommitId });
-    //   if (!latestCommit) {
-    //     console.log(`[DEBUG] Latest commit not found for asset ${assetName}`);
-    //     return res.status(404).json({ message: 'Asset commit data not found' });
-    //   }
-  
-    //   // Fetch file references from CommitFile collection
-    //   const commitFiles = await CommitFile.findOne({ commitId: latestCommit.commitId });
-    //   if (!commitFiles) {
-    //     console.log(`[DEBUG] No file data found for commit ${latestCommit.commitId}`);
-    //     return res.status(404).json({ message: 'Asset file data not found' });
-    //   }
-  
-    //   console.log(`[DEBUG] Retrieved file data for commit ${latestCommit.commitId}:`, commitFiles);
-  
-    //   try {
-    //     // Download the asset folder as a zip
-    //     console.log(`[DEBUG] Starting download process for asset ${assetName}`);
-    //     const zipBuffer = await downloadAssetFolderAsZip(assetName);
-        
-    //     // Set response headers for file download
-    //     res.setHeader('Content-Type', 'application/zip');
-    //     res.setHeader('Content-Disposition', `attachment; filename=${assetName}.zip`);
-    //     res.setHeader('Content-Length', zipBuffer.length);
-        
-    //     // Send the zip file
-    //     res.send(zipBuffer);
-    //     console.log(`[DEBUG] Successfully sent zip file for asset ${assetName}`);
-    //   } catch (error) {
-    //     console.error(`[ERROR] Error creating zip file:`, error);
-    //     res.status(500).json({ message: 'Failed to create zip file' });
-    //   }
-    // } catch (error) {
-    //   console.error(`[ERROR] Error downloading asset ${req.params.id}:`, error);
-    //   res.status(500).json({ message: 'Failed to download asset' });
-    // }
     
-    // Return the updated asset
+    // Return the updated asset with a download URL
     const transformedAsset = await transformAssetData(asset);
-
-
-
     
-    res.status(200).json({ asset: transformedAsset });
+    // Include a URL for downloading the asset
+    res.status(200).json({ 
+      asset: transformedAsset,
+      downloadUrl: `/api/assets/${assetName}/download`
+    });
   } catch (error) {
     console.error(`[ERROR] Error checking out asset ${req.params.id}:`, error);
     res.status(500).json({ message: 'Failed to check out asset' });

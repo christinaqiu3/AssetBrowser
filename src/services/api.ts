@@ -302,7 +302,10 @@ export const api = {
         
         const updatedAsset = getAssetWithDetails(mockAssets[assetIndex]);
         console.log("Updated asset after checkout:", updatedAsset);
-        return { asset: updatedAsset };
+        return { 
+          asset: updatedAsset,
+          downloadUrl: `/api/assets/${id}/download`
+        };
       }
       
       // In production, call API

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Separator } from "@/components/ui/separator";
@@ -56,12 +55,52 @@ const AssetDetailPage = () => {
     if (!id || !user || !asset) return;
     
     try {
-      const { asset: updatedAsset } = await api.checkoutAsset(id, user.pennId);
+      const response = await api.checkoutAsset(id, user.pennId);
+      const { asset: updatedAsset, downloadUrl } = response;
       setAsset(updatedAsset);
       toast({
         title: "Asset Checked Out",
         description: `You have successfully checked out ${asset.name}.`,
       });
+      
+      // Automatically download the asset
+      if (downloadUrl) {
+        console.log(`Downloading asset from ${downloadUrl}`);
+        
+        try {
+          // Make a fetch request to download the asset
+          const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+          const downloadResponse = await fetch(`${apiUrl}${downloadUrl}`);
+          
+          if (!downloadResponse.ok) {
+            throw new Error('Failed to download asset');
+          }
+          
+          // Get the blob from the response
+          const blob = await downloadResponse.blob();
+          
+          // Create a URL for the blob
+          const url = window.URL.createObjectURL(blob);
+          
+          // Create a link and click it to download the file
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `${asset.name}.zip`;
+          document.body.appendChild(link);
+          link.click();
+          
+          // Clean up
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(link);
+        } catch (downloadError) {
+          console.error('Error downloading asset:', downloadError);
+          toast({
+            title: "Download Error",
+            description: "Failed to download the asset. Please try again.",
+            variant: "destructive"
+          });
+        }
+      }
     } catch (error) {
       // Error handling is done in the API service
     }
@@ -141,4 +180,3 @@ const AssetDetailPage = () => {
 };
 
 export default AssetDetailPage;
-
