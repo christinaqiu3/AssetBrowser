@@ -17,13 +17,16 @@ interface CustomRequest extends Request {
 // Configure AWS S3 Client
 const s3Client = new S3Client({
   credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || 'PLACEHOLDER_ACCESS_KEY',
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || 'PLACEHOLDER_SECRET_KEY',
+    // accessKeyId: process.env.AWS_ACCESS_KEY_ID || 'fake',
+    // secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || 'fake',
+    accessKeyId: '',
+    secretAccessKey: '',
   },
   region: process.env.AWS_REGION || 'us-east-1'
 });
 
-const bucketName = process.env.S3_BUCKET_NAME || 'asset-management-files';
+// const bucketName = process.env.S3_BUCKET_NAME || 'production-pipelines-spring2025';
+const bucketName = 'production-pipelines-spring2025';
 
 // Verify S3 connection on startup
 export const verifyS3Connection = async () => {

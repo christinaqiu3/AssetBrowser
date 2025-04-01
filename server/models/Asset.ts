@@ -1,21 +1,15 @@
-
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IAsset extends Document {
-  assetId: number;
   assetName: string;
   keywords: string[];
   checkedOut: boolean;
-  latestCommitId: number;
-  lastApprovedId: number;
+  checkedOutBy: string | null;
+  latestCommitId: string;
+  lastApprovedId: string | null;
 }
 
 const AssetSchema: Schema = new Schema({
-  assetId: {
-    type: Number,
-    required: true,
-    unique: true
-  },
   assetName: {
     type: String,
     required: true
@@ -28,14 +22,22 @@ const AssetSchema: Schema = new Schema({
     type: Boolean,
     default: false
   },
+  checkedOutBy: {
+    type: String,
+    default: null
+  },
   latestCommitId: {
-    type: Number,
+    type: String,
     required: true
   },
   lastApprovedId: {
-    type: Number,
-    required: true
+    type: String,
+    required: false,
+    default: null
   }
-}, { timestamps: true });
+}, { 
+  timestamps: true,
+  collection: 'assets' 
+});
 
 export default mongoose.model<IAsset>('Asset', AssetSchema);

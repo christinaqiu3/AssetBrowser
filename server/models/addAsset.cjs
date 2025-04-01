@@ -25,7 +25,7 @@ async function addNewCommitFromFile(metadataFilePath) {
 
       const newCommitFiles = new CommitFiles({
           commitId: commitData.commitId,
-          files: commitData.files 
+          files: commitData.files
       });
 
       const savedCommitFiles = await newCommitFiles.save();

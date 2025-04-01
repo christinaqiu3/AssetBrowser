@@ -23,9 +23,38 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // MongoDB Connection
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/asset-management';
+// const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://fernc:spring25cs7000@cis7000-database.fdliv.mongodb.net/cis7000_mongoDB';
+const MONGODB_URI = '';
+
 mongoose.connect(MONGODB_URI)
-  .then(() => console.log('✅ Connected to MongoDB'))
+  .then(() => {
+    console.log('✅ Connected to MongoDB database: cis7000_mongoDB');
+    
+    // Diagnostic: List all collections in the database
+    if (mongoose.connection.db) {
+      mongoose.connection.db.listCollections().toArray()
+        .then(collections => {
+          console.log('📊 Available collections in database:');
+          collections.forEach(collection => {
+            console.log(`   - ${collection.name}`);
+          });
+          
+          // Check if our expected collections exist
+          const expectedCollections = ['assets', 'commits', 'commitfiles', 'users'];
+          const missingCollections = expectedCollections.filter(
+            expected => !collections.some(c => c.name === expected)
+          );
+          
+          if (missingCollections.length > 0) {
+            console.warn('⚠️ Warning: Some expected collections are missing:', missingCollections);
+            console.log('ℹ️ You may need to initialize your database with test data');
+          }
+        })
+        .catch(err => console.error('❌ Error listing collections:', err));
+    } else {
+      console.error('❌ Database connection exists but db object is undefined');
+    }
+  })
   .catch(err => console.error('❌ MongoDB connection error:', err));
 
 // Verify S3 Connection

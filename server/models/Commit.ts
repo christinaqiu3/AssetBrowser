@@ -1,12 +1,11 @@
-
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface ICommit extends Document {
-  commitId: number;
+  commitId: string;
   pennKey: string;
   versionNum: string;
   notes: string;
-  prevCommitId: number | null;
+  prevCommitId: string | null;
   commitDate: string;
   hasMaterials: boolean;
   state: string[];
@@ -14,7 +13,7 @@ export interface ICommit extends Document {
 
 const CommitSchema: Schema = new Schema({
   commitId: {
-    type: Number,
+    type: String,
     required: true,
     unique: true
   },
@@ -31,7 +30,7 @@ const CommitSchema: Schema = new Schema({
     default: ''
   },
   prevCommitId: {
-    type: Number,
+    type: String,
     default: null
   },
   commitDate: {
@@ -46,6 +45,8 @@ const CommitSchema: Schema = new Schema({
     type: [String],
     default: []
   }
+}, {
+  collection: 'commits'
 });
 
 export default mongoose.model<ICommit>('Commit', CommitSchema);

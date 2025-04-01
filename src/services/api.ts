@@ -1,23 +1,23 @@
 import { toast } from "@/components/ui/use-toast";
+import { useUser } from "@/contexts/UserContext";
 
 // Types based on MongoDB schemas
 export interface Asset {
-  assetId: number; // Using assetId as the unique identifier as per updated schema
-  assetName: string;
+  assetName: string; // Changed from assetId
   keywords: string[];
   checkedOut: boolean;
-  latestCommitId: number; // Updated from commitId
-  lastApprovedId: number; // Added from schema
+  latestCommitId: string; // Changed from number to string
+  lastApprovedId: string; // Changed from number to string
   // Frontend-specific properties
   thumbnailUrl: string; // Will come from S3 in production
 }
 
 export interface Commit {
-  commitId: number;
+  commitId: string; // Changed from number to string
   pennKey: string; // Author's pennKey
   versionNum: string;
   notes: string; // Updated from description
-  prevCommitId: number | null; // Updated from lastCommitId
+  prevCommitId: string | null; // Updated from number to string
   commitDate: string;
   hasMaterials: boolean;
   state: string[]; // Added from schema
@@ -31,7 +31,6 @@ export interface User {
 
 // Combined asset data for frontend display
 export interface AssetWithDetails {
-  assetId: number; // Updated from id
   name: string;
   thumbnailUrl: string;
   version: string;
@@ -55,11 +54,11 @@ const mockUsers: User[] = [
 ];
 
 const mockCommits: Commit[] = Array.from({ length: 50 }, (_, i) => ({
-  commitId: i + 1,
+  commitId: (i + 1).toString(),
   pennKey: mockUsers[i % 4].pennId,
   versionNum: `0${Math.floor(i / 10) + 1}.${Math.floor(i % 5)}.00`,
   notes: `Update to asset ${Math.floor(i / 2) + 1}`,
-  prevCommitId: i === 0 ? null : i,
+  prevCommitId: i === 0 ? null : i.toString(),
   commitDate: new Date(Date.now() - ((i + 1) * 43200000)).toISOString(),
   hasMaterials: i % 3 === 0,
   state: [],
@@ -70,13 +69,12 @@ const mockAssets: Asset[] = Array.from({ length: 20 }, (_, i) => {
   const latestCommit = assetCommits.length > 0 ? assetCommits[0] : null;
   
   return {
-    assetId: i + 1,
     assetName: `Asset ${i + 1}`,
     keywords: ["3D", "Model", "Character", "Environment", "Prop", "Texture", "Animation"]
       .filter((_, ki) => ki % (i % 3 + 2) === 0),
     checkedOut: i % 5 === 0,
-    latestCommitId: latestCommit?.commitId || 0,
-    lastApprovedId: latestCommit?.commitId || 0,
+    latestCommitId: latestCommit?.commitId || "0",
+    lastApprovedId: latestCommit?.commitId || "0",
     thumbnailUrl: `https://placekitten.com/400/${300 + (i % 5) * 10}`,
   };
 });
@@ -89,7 +87,7 @@ const getUserFullName = (pennId: string | null): string | null => {
 };
 
 // Helper function to get commit by commitId
-const getCommitById = (commitId: number): Commit | null => {
+const getCommitById = (commitId: string): Commit | null => {
   return mockCommits.find(c => c.commitId === commitId) || null;
 };
 
@@ -97,17 +95,23 @@ const getCommitById = (commitId: number): Commit | null => {
 const getAssetWithDetails = (asset: Asset): AssetWithDetails => {
   const latestCommit = getCommitById(asset.latestCommitId);
   const creatorCommit = mockCommits.filter(c => 
-    c.notes.includes(`asset ${asset.assetId}`)
+    c.notes.includes(`asset ${asset.assetName}`)
   ).pop(); // Get the oldest commit for this asset
   
+  // Store the user's pennId (not full name) as checkedOutBy when checked out
+  let checkedOutByPennId = null;
+  if (asset.checkedOut) {
+    // Find the user who last modified the asset
+    checkedOutByPennId = latestCommit?.pennKey || null;
+  }
+  
   return {
-    assetId: asset.assetId,
     name: asset.assetName,
     thumbnailUrl: asset.thumbnailUrl,
     version: latestCommit?.versionNum || "01.00.00",
     creator: getUserFullName(creatorCommit?.pennKey || null) || "Unknown",
     lastModifiedBy: getUserFullName(latestCommit?.pennKey || null) || "Unknown",
-    checkedOutBy: getUserFullName(mockUsers.find((user) => user.pennId === latestCommit?.pennKey)?.pennId) || null,
+    checkedOutBy: checkedOutByPennId, // Store pennId instead of fullName
     isCheckedOut: asset.checkedOut,
     materials: latestCommit?.hasMaterials || false,
     keywords: asset.keywords,
@@ -127,6 +131,8 @@ export const api = {
   // Get all assets with optional filtering
   async getAssets(params?: { search?: string; author?: string; checkedInOnly?: boolean; sortBy?: string }) {
     try {
+      console.log('[DEBUG] API: getAssets called with params:', params);
+      
       // Build query string from params
       const queryParams = new URLSearchParams();
       if (params?.search) queryParams.append('search', params.search);
@@ -136,8 +142,9 @@ export const api = {
       
       const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
       
-      // In development, use mock data
+      // In development, use mock data (unchanged)
       if (process.env.NODE_ENV === 'development') {
+        console.log('[DEBUG] API: Using mock data for getAssets');
         let filteredAssets = [...mockAssets];
       
         // Apply search filter
@@ -188,13 +195,19 @@ export const api = {
       }
       
       // In production, call API
+      console.log(`[DEBUG] API: Fetching from ${API_URL}/assets${queryString}`);
       const response = await fetch(`${API_URL}/assets${queryString}`);
-      if (!response.ok) throw new Error('Failed to fetch assets');
+      
+      if (!response.ok) {
+        console.error(`[ERROR] API: Failed to fetch assets, status: ${response.status}`);
+        throw new Error('Failed to fetch assets');
+      }
       
       const data = await response.json();
+      console.log(`[DEBUG] API: Received ${data.assets?.length || 0} assets from server`);
       return data;
     } catch (error) {
-      console.error("Failed to fetch assets:", error);
+      console.error("[ERROR] API: Failed to fetch assets:", error);
       toast({
         title: "Error",
         description: "Failed to fetch assets. Please try again.",
@@ -210,13 +223,14 @@ export const api = {
       // In development, use mock data
       if (process.env.NODE_ENV === 'development') {
         await simulateApiDelay();
-        const asset = mockAssets.find(a => a.assetId === parseInt(id));
+        const asset = mockAssets.find(a => a.assetName === id);
         
         if (!asset) {
           throw new Error("Asset not found");
         }
         
         const assetWithDetails = getAssetWithDetails(asset);
+        console.log("Asset details:", assetWithDetails);
         return { asset: assetWithDetails };
       }
       
@@ -243,14 +257,15 @@ export const api = {
       // In development, use mock data
       if (process.env.NODE_ENV === 'development') {
         await simulateApiDelay();
-        const assetIndex = mockAssets.findIndex(a => a.assetId === parseInt(id));
+        const assetIndex = mockAssets.findIndex(a => a.assetName === id);
         
         if (assetIndex === -1) {
           throw new Error("Asset not found");
         }
         
         if (mockAssets[assetIndex].checkedOut) {
-          const checkedOutByName = getUserFullName(mockUsers.find((user) => user.pennId === mockAssets[assetIndex].latestCommitId.toString())?.pennId);
+          const checkedOutBy = mockAssets[assetIndex].latestCommitId.toString();
+          const checkedOutByName = getUserFullName(checkedOutBy);
           throw new Error(`Asset is already checked out by ${checkedOutByName}`);
         }
         
@@ -260,14 +275,34 @@ export const api = {
           throw new Error("User not found");
         }
         
+        // Create a new commit for this checkout
+        const newCommitId = (mockCommits.length + 1).toString();
+        const lastCommit = getCommitById(mockAssets[assetIndex].latestCommitId);
+        
+        const newCommit: Commit = {
+          commitId: newCommitId,
+          pennKey: user.pennId,
+          versionNum: lastCommit?.versionNum || "01.00.00",
+          notes: `Checked out ${mockAssets[assetIndex].assetName}`,
+          prevCommitId: lastCommit?.commitId || null,
+          commitDate: new Date().toISOString(),
+          hasMaterials: lastCommit?.hasMaterials || false,
+          state: []
+        };
+        
+        // Add the new commit to mock data
+        mockCommits.unshift(newCommit);
+        
         // Update the asset (in a real app, this would update MongoDB)
         mockAssets[assetIndex] = {
           ...mockAssets[assetIndex],
           checkedOut: true,
-          latestCommitId: parseInt(user.pennId)
+          latestCommitId: newCommitId
         };
         
-        return { asset: getAssetWithDetails(mockAssets[assetIndex]) };
+        const updatedAsset = getAssetWithDetails(mockAssets[assetIndex]);
+        console.log("Updated asset after checkout:", updatedAsset);
+        return { asset: updatedAsset };
       }
       
       // In production, call API
@@ -303,7 +338,7 @@ export const api = {
       // In development, use mock data
       if (process.env.NODE_ENV === 'development') {
         await simulateApiDelay();
-        const assetIndex = mockAssets.findIndex(a => a.assetId === parseInt(id));
+        const assetIndex = mockAssets.findIndex(a => a.assetName === id);
         
         if (assetIndex === -1) {
           throw new Error("Asset not found");
@@ -313,15 +348,12 @@ export const api = {
           throw new Error("Asset is not checked out");
         }
         
-        // Find user by pennId
-        const user = mockUsers.find(u => u.pennId === pennId);
-        if (!user) {
-          throw new Error("User not found");
-        }
+        // Get the asset details to check who checked it out
+        const assetDetails = getAssetWithDetails(mockAssets[assetIndex]);
         
         // Verify the user who's checking in is the one who checked out
-        if (mockUsers.find((user) => user.pennId === mockAssets[assetIndex].latestCommitId.toString())?.pennId !== user.pennId) {
-          const checkedOutByName = getUserFullName(mockUsers.find((user) => user.pennId === mockAssets[assetIndex].latestCommitId.toString())?.pennId);
+        if (assetDetails.checkedOutBy !== pennId) {
+          const checkedOutByName = getUserFullName(assetDetails.checkedOutBy);
           throw new Error(`Asset is checked out by ${checkedOutByName}, not you`);
         }
         
@@ -337,10 +369,10 @@ export const api = {
         const newVersion = `${versionParts[0]}.${minorVersion.toString().padStart(2, '0')}.00`;
         
         // Create a new commit
-        const newCommitId = mockCommits.length + 1;
+        const newCommitId = (mockCommits.length + 1).toString();
         const newCommit: Commit = {
           commitId: newCommitId,
-          pennKey: user.pennId,
+          pennKey: pennId,
           versionNum: newVersion,
           notes: `Update to ${mockAssets[assetIndex].assetName}`,
           prevCommitId: lastCommit.commitId,
@@ -357,10 +389,12 @@ export const api = {
           ...mockAssets[assetIndex],
           latestCommitId: newCommitId,
           checkedOut: false,
-          lastApprovedId: 0
+          lastApprovedId: "0"
         };
         
-        return { asset: getAssetWithDetails(mockAssets[assetIndex]) };
+        const updatedAsset = getAssetWithDetails(mockAssets[assetIndex]);
+        console.log("Updated asset after check-in:", updatedAsset);
+        return { asset: updatedAsset };
       }
       
       // In production, call API
@@ -396,7 +430,7 @@ export const api = {
       // In development, use mock data
       if (process.env.NODE_ENV === 'development') {
         await simulateApiDelay();
-        const asset = mockAssets.find(a => a.assetId === parseInt(id));
+        const asset = mockAssets.find(a => a.assetName === id);
         
         if (!asset) {
           throw new Error("Asset not found");

@@ -103,7 +103,7 @@ const AssetDetailPage = () => {
   };
   
   const canCheckout = asset && !asset.isCheckedOut && user;
-  const canCheckin = asset && asset.isCheckedOut && user && asset.checkedOutBy === getUserFullName(user.pennId);
+  const canCheckin = asset && asset.isCheckedOut && user && asset.checkedOutBy === user.pennId;
   
   if (isLoading) {
     return <AssetDetailSkeleton />;

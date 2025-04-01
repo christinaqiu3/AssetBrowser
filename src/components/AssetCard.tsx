@@ -14,7 +14,7 @@ const AssetCard = ({ asset }: AssetCardProps) => {
   const [imageLoaded, setImageLoaded] = useState(false);
 
   return (
-    <Link to={`/assets/${asset.assetId}`} className="block">
+    <Link to={`/assets/${asset.name}`} className="block">
       <Card className={cn(
         "asset-card h-full overflow-hidden",
         asset.isCheckedOut && "checked-out",
@@ -52,11 +52,27 @@ const AssetCard = ({ asset }: AssetCardProps) => {
             <div className="flex items-center text-xs text-muted-foreground">
               <Calendar className="h-3 w-3 mr-1" />
               <span>
-                {new Date(asset.updatedAt).toLocaleDateString(undefined, {
-                  year: "numeric",
-                  month: "short",
-                  day: "numeric"
-                })}
+                {(() => {
+                  try {
+                    let dateStr = asset.updatedAt;
+
+                    dateStr = dateStr.replace(/([+-]\d{2})$/, "$1:00");
+
+                    const date = new Date(dateStr);
+                    if (!isNaN(date.getTime())) {
+                      return date.toLocaleString("en-US", {
+                        month: "long",   // "February", "March", etc.
+                        day: "numeric",  // 1, 2, 3, ...
+                        year: "numeric"  // 2025, 2026, ...
+                      });
+                    }
+
+                    return "Date unavailable";
+                  } catch (error) {
+                    console.error("Error formatting date:", error);
+                    return "Date unavailable";
+                  }
+                })()}
               </span>
             </div>
           </div>

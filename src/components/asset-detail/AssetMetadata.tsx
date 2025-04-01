@@ -27,13 +27,18 @@ const AssetMetadata = ({ asset, hideTitle = false }: AssetMetadataProps) => {
             <div className="text-sm font-medium">Last Modified</div>
             <div className="text-sm text-muted-foreground">{asset?.lastModifiedBy}</div>
             <div className="text-sm text-muted-foreground">
-              {asset?.updatedAt ? new Date(asset.updatedAt).toLocaleDateString(undefined, {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-                hour: "2-digit",
-                minute: "2-digit"
-              }) : ''}
+              {asset?.updatedAt
+                ? new Date(
+                    // If the date ends with +HH or -HH (two digits, no :00), append :00
+                    asset.updatedAt.replace(/([+\-]\d{2})$/, "$1:00")
+                  ).toLocaleDateString(undefined, {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit"
+                  })
+                : ''}
             </div>
           </div>
         </div>
