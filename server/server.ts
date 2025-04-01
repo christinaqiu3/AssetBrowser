@@ -23,7 +23,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // MongoDB Connection
-// const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://fernc:spring25cs7000@cis7000-database.fdliv.mongodb.net/cis7000_mongoDB';
 const MONGODB_URI = '';
 
 mongoose.connect(MONGODB_URI)

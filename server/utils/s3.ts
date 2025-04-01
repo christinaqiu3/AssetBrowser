@@ -1,4 +1,4 @@
-import { S3Client, GetObjectCommand, PutObjectCommand, DeleteObjectCommand, HeadObjectCommand, ListBucketsCommand } from '@aws-sdk/client-s3';
+import { S3Client, GetObjectCommand, PutObjectCommand, DeleteObjectCommand, HeadObjectCommand, ListBucketsCommand, GetObjectCommandOutput, ListObjectsV2Command } from '@aws-sdk/client-s3';
 import multer from 'multer';
 import multerS3 from 'multer-s3';
 import path from 'path';
@@ -10,7 +10,7 @@ interface CustomRequest extends Request {
   body: {
     commitId?: string;
     assetName?: string;
-    [key: string]: any;
+    [key: string]: unknown;
   }
 }
 
@@ -22,7 +22,7 @@ const s3Client = new S3Client({
     accessKeyId: '',
     secretAccessKey: '',
   },
-  region: process.env.AWS_REGION || 'us-east-1'
+  region: 'us-east-2'
 });
 
 // const bucketName = process.env.S3_BUCKET_NAME || 'production-pipelines-spring2025';
@@ -145,5 +145,106 @@ export const checkFileExistsInS3 = async (key: string) => {
     return true;
   } catch (error) {
     return false;
+  }
+};
+
+// Function to get a signed URL for an asset thumbnail
+export const getAssetThumbnailUrl = async (assetName: string) => {
+  try {
+    console.log(`[DEBUG] Looking for thumbnail for asset: ${assetName}`);
+    
+    // First, check if the Week4Assets folder exists and list its contents
+    console.log(`[DEBUG] Listing objects in the S3 bucket with prefix 'Week4Assets/'`);
+    const rootObjects = await listObjectsInS3WithPrefix('Week4Assets/');
+    if (!rootObjects || rootObjects.length === 0) {
+      console.log(`[DEBUG] No objects found with prefix 'Week4Assets/'`);
+      return null;
+    }
+    
+    // Log the first few objects to see the structure
+    console.log(`[DEBUG] Found ${rootObjects.length} objects in 'Week4Assets/'`);
+    rootObjects.slice(0, 5).forEach(obj => {
+      console.log(`[DEBUG] - ${obj.Key}`);
+    });
+    
+    // Check if the asset folder exists
+    const assetFolderPrefix = `Week4Assets/${assetName}/`;
+    console.log(`[DEBUG] Looking for asset folder: ${assetFolderPrefix}`);
+    const assetObjects = await listObjectsInS3WithPrefix(assetFolderPrefix);
+    
+    if (!assetObjects || assetObjects.length === 0) {
+      console.log(`[DEBUG] No objects found in asset folder: ${assetFolderPrefix}`);
+      return null;
+    }
+    
+    // Log all objects in the asset folder
+    console.log(`[DEBUG] Found ${assetObjects.length} objects in asset folder:`);
+    assetObjects.forEach(obj => {
+      console.log(`[DEBUG] - ${obj.Key}`);
+    });
+    
+    // The path to the thumbnail in the S3 bucket
+    const thumbnailKey = `Week4Assets/${assetName}/thumbnail.png`;
+    
+    // Check if the thumbnail exists
+    const exists = await checkFileExistsInS3(thumbnailKey);
+    if (!exists) {
+      console.log(`[DEBUG] Thumbnail not found for asset: ${assetName} at path: ${thumbnailKey}`);
+      
+      // Try to find any PNG files in the asset folder that might be thumbnails
+      const pngFiles = assetObjects.filter(obj => obj.Key?.toLowerCase().endsWith('.png'));
+      if (pngFiles.length > 0) {
+        console.log(`[DEBUG] Found ${pngFiles.length} PNG files in asset folder:`);
+        pngFiles.forEach(obj => {
+          console.log(`[DEBUG] - ${obj.Key}`);
+        });
+        
+        // Use the first PNG file as the thumbnail
+        const firstPngKey = pngFiles[0].Key;
+        if (firstPngKey) {
+          console.log(`[DEBUG] Using first PNG file as thumbnail: ${firstPngKey}`);
+          return `https://${bucketName}.s3.amazonaws.com/${firstPngKey}`;
+        }
+      }
+      
+      return null;
+    }
+    
+    // Generate a URL for the thumbnail
+    return `https://${bucketName}.s3.amazonaws.com/${thumbnailKey}`;
+  } catch (error) {
+    console.error(`[ERROR] Error getting thumbnail URL for asset ${assetName}:`, error);
+    return null;
+  }
+};
+
+// Function to list objects in the S3 bucket
+export const listObjectsInS3 = async () => {
+  try {
+    const command = new ListObjectsV2Command({
+      Bucket: bucketName
+    });
+    
+    const response = await s3Client.send(command);
+    return response.Contents;
+  } catch (error) {
+    console.error(`Error listing objects in S3 bucket ${bucketName}:`, error);
+    throw error;
+  }
+};
+
+// Function to list objects in the S3 bucket with prefix
+export const listObjectsInS3WithPrefix = async (prefix: string) => {
+  try {
+    const command = new ListObjectsV2Command({
+      Bucket: bucketName,
+      Prefix: prefix
+    });
+    
+    const response = await s3Client.send(command);
+    return response.Contents;
+  } catch (error) {
+    console.error(`Error listing objects in S3 bucket ${bucketName} with prefix ${prefix}:`, error);
+    throw error;
   }
 };

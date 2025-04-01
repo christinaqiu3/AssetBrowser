@@ -4,6 +4,7 @@ import Asset from '../models/Asset';
 import Commit from '../models/Commit';
 import CommitFile from '../models/CommitFile';
 import User from '../models/User';
+import { getAssetThumbnailUrl } from '../utils/s3';
 
 // Helper to transform Asset document to match frontend expectations
 const transformAssetData = async (asset: any) => {
@@ -66,14 +67,19 @@ const transformAssetData = async (asset: any) => {
       console.log(`[DEBUG] Asset is checked out by:`, checkedOutBy);
     }
     
-    // Create a placeholder URL for thumbnails (should be in S3 in production)
-    const thumbnailUrl = `https://placekitten.com/400/${300 + (Math.floor(Math.random() * 5) * 10)}`;
+    // Fetch thumbnail URL from S3
+    // Use the full URL for the thumbnail
+    const baseUrl = process.env.API_URL || 'http://localhost:5000';
+    const thumbnailUrl = `${baseUrl}/api/assets/${asset.assetName}/thumbnail`;
+    
+    // Log the thumbnail URL for debugging
+    console.log(`[DEBUG] Setting thumbnail URL for asset ${asset.assetName}:`, thumbnailUrl);
     
     // Transform to match frontend expectations
     const transformed = {
       assetId: asset._id, // Use MongoDB _id as assetId for the frontend
       name: asset.assetName,
-      thumbnailUrl,
+      thumbnailUrl: thumbnailUrl,
       version: latestCommit?.versionNum || "01.00.00",
       creator: creator?.fullName || "Unknown",
       lastModifiedBy: lastModifiedBy?.fullName || "Unknown",
