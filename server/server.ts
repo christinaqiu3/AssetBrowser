@@ -13,8 +13,11 @@ import { verifyS3Connection } from './utils/s3';
 import { checkoutAsset } from './controllers/assetController';
 
 // Import functions
-const {getAssetByName, addNewCommitFromFile} = require('./models/addAsset.cjs');
+// const {getAssetByName, addNewCommitFromFile} = require('./models/addAsset.cjs');
+
 const checkOutAsset = require('./models/checkOutAsset.js');
+const getAssetByName = require('./models/addAsset.cjs');
+const addNewCommitFromFile = require('./models/addAsset.cjs');
 
 
 // Load environment variables
