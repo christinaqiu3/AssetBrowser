@@ -94,7 +94,8 @@ app.put('/assets/checkout/:name', async (req, res) => {
 // Route: Get Asset Details (for when a user clicks to view full asset info)
 app.get('/assets/:name', async (req, res) => {
   try {
-    const asset = await Asset.findOne({ id: req.params.name });
+    const name = req.params.name;
+    const asset = await getAssetDetails(name);
 
     if (!asset) {
       return res.status(404).json({ error: "Asset not found" });
