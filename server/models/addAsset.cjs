@@ -3,6 +3,27 @@ const fs = require('fs');
 const moment = require('moment');
 const Commit = require('./Commit');
 const CommitFiles = require('./CommitFile');
+const Asset = require('./Asset'); 
+
+let commitIdCounter = 1; // Start from 0000001 for commitId
+let assetIdCounter = 1;
+
+async function getAssetByName(assetName) {
+  try {
+      const asset = await Asset.findOne({ assetName });
+
+      if (!asset) {
+          console.log(`Asset not found: ${assetName}`);
+          return null;
+      }
+
+      console.log(`Asset found:`, asset);
+      return asset;
+  } catch (error) {
+      console.error('Error retrieving asset:', error);
+      throw new Error('Failed to retrieve asset');
+  }
+}
 
 async function addNewCommitFromFile(metadataFilePath) {
   try {
@@ -78,8 +99,34 @@ async function addTestCommit() {
 
       const savedCommitFiles = await newCommitFiles.save();
       console.log('Test commit files successfully added:', savedCommitFiles);
+      commitIdCounter++;
   } catch (err) {
       console.error('Error adding test commit:', err);
+  }
+}
+
+async function addTestAsset() {
+  try {
+      const assetId = assetIdCounter.toString().padStart(7, '0');
+      const latestCommitId = commitIdCounter - 1; // Use the last commitId as the latestCommitId
+      const lastApprovedId = commitIdCounter - 1; // Use the last commitId as lastApprovedId
+
+      const assetData = {
+          assetId: assetId,
+          assetName: `Asset_${assetId}`,
+          keywords: ["test", "asset"],
+          checkedOut: false,
+          latestCommitId: latestCommitId,
+          lastApprovedId: lastApprovedId
+      };
+
+      const newAsset = new Asset(assetData);
+      const savedAsset = await newAsset.save();
+      console.log('Test asset successfully added:', savedAsset);
+
+      assetIdCounter++; // Increment assetIdCounter for the next asset
+  } catch (err) {
+      console.error('Error adding test asset:', err);
   }
 }
   

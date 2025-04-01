@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
+const getAssetByName = require('./getAssetByName'); 
 
 // Import routes
 import assetRoutes from './routes/assetRoutes';
@@ -94,8 +95,7 @@ app.put('/assets/checkout/:name', async (req, res) => {
 // Route: Get Asset Details (for when a user clicks to view full asset info)
 app.get('/assets/:name', async (req, res) => {
   try {
-    const name = req.params.name;
-    const asset = await getAssetDetails(name);
+    const asset = await getAssetByName(req.params.name);
 
     if (!asset) {
       return res.status(404).json({ error: "Asset not found" });
