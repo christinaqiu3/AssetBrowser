@@ -72,7 +72,6 @@ router.get('/:assetName/thumbnail', (async (req, res) => {
       const pngFiles = assetObjects?.filter(obj => obj.Key?.toLowerCase().endsWith('.png')) || [];
       
       if (pngFiles.length > 0) {
-        console.log(`[DEBUG] Found ${pngFiles.length} PNG files in asset folder`);
         const firstPngKey = pngFiles[0].Key;
         
         if (firstPngKey) {

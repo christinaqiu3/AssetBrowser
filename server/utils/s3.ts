@@ -4,6 +4,7 @@ import multerS3 from 'multer-s3';
 import path from 'path';
 import { Request } from 'express';
 import { Readable } from 'stream';
+import JSZip from 'jszip';
 
 // Define custom interface to extend Express Request
 interface CustomRequest extends Request {
@@ -145,6 +146,69 @@ export const checkFileExistsInS3 = async (key: string) => {
     return true;
   } catch (error) {
     return false;
+  }
+};
+
+// Function to download all files in an asset folder as a zip
+export const downloadAssetFolderAsZip = async (assetName: string): Promise<Buffer> => {
+  try {
+    console.log(`[DEBUG] Downloading all files for asset: ${assetName}`);
+    
+    // Use the Week4Assets folder structure
+    const assetFolderPrefix = `Week4Assets/${assetName}/`;
+    
+    // List all objects in the asset folder
+    console.log(`[DEBUG] Listing objects in folder: ${assetFolderPrefix}`);
+    const assetObjects = await listObjectsInS3WithPrefix(assetFolderPrefix);
+    
+    if (!assetObjects || assetObjects.length === 0) {
+      console.log(`[DEBUG] No objects found in asset folder: ${assetFolderPrefix}`);
+      throw new Error(`No files found for asset: ${assetName}`);
+    }
+    
+    console.log(`[DEBUG] Found ${assetObjects.length} objects in asset folder`);
+    
+    // Import required libraries
+    const zip = new JSZip();
+    
+    // Download each file and add it to the zip
+    const downloadPromises = assetObjects.map(async (obj) => {
+      if (!obj.Key) return;
+      
+      try {
+        // Get the file from S3
+        const fileStream = await getFileFromS3(obj.Key);
+        
+        // Convert stream to buffer
+        const chunks: Buffer[] = [];
+        for await (const chunk of fileStream) {
+          chunks.push(Buffer.from(chunk));
+        }
+        const buffer = Buffer.concat(chunks);
+        
+        // Get the filename without the prefix
+        const filename = obj.Key.replace(assetFolderPrefix, '');
+        
+        // Add the file to the zip
+        zip.file(filename, buffer);
+        console.log(`[DEBUG] Added file to zip: ${filename}`);
+      } catch (error) {
+        console.error(`[ERROR] Error downloading file ${obj.Key}:`, error);
+      }
+    });
+    
+    // Wait for all downloads to complete
+    await Promise.all(downloadPromises);
+    
+    // Generate the zip file
+    console.log(`[DEBUG] Generating zip file for asset: ${assetName}`);
+    const zipBuffer = await zip.generateAsync({ type: 'nodebuffer' });
+    console.log(`[DEBUG] Zip file generated, size: ${zipBuffer.length} bytes`);
+    
+    return zipBuffer;
+  } catch (error) {
+    console.error(`[ERROR] Error downloading asset folder as zip:`, error);
+    throw error;
   }
 };
 

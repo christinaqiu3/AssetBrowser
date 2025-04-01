@@ -4,7 +4,7 @@ import Asset from '../models/Asset';
 import Commit from '../models/Commit';
 import CommitFile from '../models/CommitFile';
 import User from '../models/User';
-import { getAssetThumbnailUrl } from '../utils/s3';
+import { getAssetThumbnailUrl, downloadAssetFolderAsZip } from '../utils/s3';
 
 // Helper to transform Asset document to match frontend expectations
 const transformAssetData = async (asset: any) => {
@@ -265,14 +265,100 @@ export const checkoutAsset = async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'Asset is already checked out' });
     }
     
+    // Get the latest commit for this asset
+    console.log(`[DEBUG] Getting latest commit for asset ${assetName} with commitId: ${asset.latestCommitId}`);
+    const latestCommit = await Commit.findOne({ commitId: asset.latestCommitId });
+    if (!latestCommit) {
+      console.log(`[DEBUG] Latest commit not found for asset ${assetName}`);
+      return res.status(404).json({ message: 'Asset commit data not found' });
+    }
+    console.log(`[DEBUG] Found latest commit: ${latestCommit.commitId}, version: ${latestCommit.versionNum}`);
+    
+    // Fetch file references from CommitFile collection
+    console.log(`[DEBUG] Fetching commit files for commit ${latestCommit.commitId}`);
+    const commitFiles = await CommitFile.findOne({ commitId: latestCommit.commitId });
+    if (!commitFiles) {
+      console.log(`[DEBUG] No file data found for commit ${latestCommit.commitId}`);
+    } else {
+      console.log(`[DEBUG] Retrieved file data for commit ${latestCommit.commitId}:`);
+      // Log the commit files object structure
+      console.log(JSON.stringify(commitFiles, null, 2));
+      
+      // Extract and log the file paths (keys that are not the commitId or MongoDB metadata)
+      const filePaths = Object.keys(commitFiles.toObject()).filter(key => 
+        key !== 'commitId' && key !== '_id' && key !== '__v'
+      );
+      console.log(`[DEBUG] File paths in commit: ${filePaths.join(', ')}`);
+      
+      // Log each file path and its corresponding S3 version ID
+      filePaths.forEach(path => {
+        console.log(`[DEBUG] File: ${path}, S3 Version ID: ${(commitFiles as any)[path]}`);
+      });
+    }
+    
     // Update the asset to be checked out
     asset.checkedOut = true;
-    asset.checkedOutBy = "willcai"; 
+    asset.checkedOutBy = pennId || "willcai"; 
     await asset.save();
-    console.log(`[DEBUG] Asset ${assetName} has been checked out by willcai`);
+    console.log(`[DEBUG] Asset ${assetName} has been checked out by ${pennId || "willcai"}`);
+
+    // download asset
+    // try {
+    //   const assetName = req.params.id;
+    //   console.log(`[DEBUG] Downloading asset ${assetName}`);
+  
+    //   // Find the asset by assetName
+    //   const asset = await Asset.findOne({ assetName });
+  
+    //   if (!asset) {
+    //     console.log(`[DEBUG] Asset ${assetName} not found for download`);
+    //     return res.status(404).json({ message: 'Asset not found' });
+    //   }
+  
+    //   // Get the latest commit for this asset
+    //   const latestCommit = await Commit.findOne({ commitId: asset.latestCommitId });
+    //   if (!latestCommit) {
+    //     console.log(`[DEBUG] Latest commit not found for asset ${assetName}`);
+    //     return res.status(404).json({ message: 'Asset commit data not found' });
+    //   }
+  
+    //   // Fetch file references from CommitFile collection
+    //   const commitFiles = await CommitFile.findOne({ commitId: latestCommit.commitId });
+    //   if (!commitFiles) {
+    //     console.log(`[DEBUG] No file data found for commit ${latestCommit.commitId}`);
+    //     return res.status(404).json({ message: 'Asset file data not found' });
+    //   }
+  
+    //   console.log(`[DEBUG] Retrieved file data for commit ${latestCommit.commitId}:`, commitFiles);
+  
+    //   try {
+    //     // Download the asset folder as a zip
+    //     console.log(`[DEBUG] Starting download process for asset ${assetName}`);
+    //     const zipBuffer = await downloadAssetFolderAsZip(assetName);
+        
+    //     // Set response headers for file download
+    //     res.setHeader('Content-Type', 'application/zip');
+    //     res.setHeader('Content-Disposition', `attachment; filename=${assetName}.zip`);
+    //     res.setHeader('Content-Length', zipBuffer.length);
+        
+    //     // Send the zip file
+    //     res.send(zipBuffer);
+    //     console.log(`[DEBUG] Successfully sent zip file for asset ${assetName}`);
+    //   } catch (error) {
+    //     console.error(`[ERROR] Error creating zip file:`, error);
+    //     res.status(500).json({ message: 'Failed to create zip file' });
+    //   }
+    // } catch (error) {
+    //   console.error(`[ERROR] Error downloading asset ${req.params.id}:`, error);
+    //   res.status(500).json({ message: 'Failed to download asset' });
+    // }
     
     // Return the updated asset
     const transformedAsset = await transformAssetData(asset);
+
+
+
+    
     res.status(200).json({ asset: transformedAsset });
   } catch (error) {
     console.error(`[ERROR] Error checking out asset ${req.params.id}:`, error);
@@ -366,18 +452,23 @@ export const downloadAsset = async (req: Request, res: Response) => {
 
     console.log(`[DEBUG] Retrieved file data for commit ${latestCommit.commitId}:`, commitFiles);
 
-    // TODO: Implement S3 file retrieval
-    // For now, return the file information
-    console.log(`[DEBUG] Starting download process for asset ${assetName}`);
-
-    res.status(200).json({ 
-      success: true,
-      asset: {
-        assetName,
-        commitId: latestCommit.commitId,
-        files: commitFiles
-      }
-    });
+    try {
+      // Download the asset folder as a zip
+      console.log(`[DEBUG] Starting download process for asset ${assetName}`);
+      const zipBuffer = await downloadAssetFolderAsZip(assetName);
+      
+      // Set response headers for file download
+      res.setHeader('Content-Type', 'application/zip');
+      res.setHeader('Content-Disposition', `attachment; filename=${assetName}.zip`);
+      res.setHeader('Content-Length', zipBuffer.length);
+      
+      // Send the zip file
+      res.send(zipBuffer);
+      console.log(`[DEBUG] Successfully sent zip file for asset ${assetName}`);
+    } catch (error) {
+      console.error(`[ERROR] Error creating zip file:`, error);
+      res.status(500).json({ message: 'Failed to create zip file' });
+    }
   } catch (error) {
     console.error(`[ERROR] Error downloading asset ${req.params.id}:`, error);
     res.status(500).json({ message: 'Failed to download asset' });
